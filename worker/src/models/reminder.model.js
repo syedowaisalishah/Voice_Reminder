@@ -56,7 +56,6 @@ reminderSchema.virtual('callLogs', {
 });
 
 reminderSchema.index({ status: 1, scheduledAt: 1 });
-reminderSchema.index({ twilioCallSid: 1 });
 
 const Reminder = mongoose.model('Reminder', reminderSchema);
 

@@ -40,7 +40,6 @@ const callLogSchema = new mongoose.Schema(
 );
 
 callLogSchema.index({ externalCallId: 1, provider: 1 }, { unique: true });
-callLogSchema.index({ reminderId: 1 });
 
 const CallLog = mongoose.model('CallLog', callLogSchema);
 
