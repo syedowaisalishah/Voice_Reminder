@@ -1,23 +1,28 @@
 const Reminder = require('../models/reminder.model');
 
+/**
+ * Reminder Repository - Database access layer for Reminder model
+ * Contains ONLY database operations, no business logic
+ */
+
 module.exports = {
-  createReminder: async (data) => {
-    return await Reminder.create(data);
+  create: async (reminderData) => {
+    return await Reminder.create(reminderData);
   },
 
-  getReminderById: async (id) => {
+  findById: async (id) => {
     return await Reminder.findById(id).populate('callLogs');
   },
 
-  getUserReminders: async (user_id) => {
-    return await Reminder.find({ userId: user_id }).sort({ scheduledAt: -1 });
+  findByUserId: async (filter, options = {}) => {
+    const { skip = 0, limit = 25 } = options;
+    return await Reminder.find(filter)
+      .sort({ scheduledAt: -1 })
+      .skip(skip)
+      .limit(limit);
   },
 
-  updateReminderStatus: async (id, status, external_call_id = null) => {
-    const updateData = { status };
-    if (external_call_id) {
-      updateData.twilioCallSid = external_call_id;
-    }
+  update: async (id, updateData) => {
     return await Reminder.findByIdAndUpdate(id, updateData, { new: true });
   },
 
