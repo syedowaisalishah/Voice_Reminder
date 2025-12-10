@@ -15,20 +15,18 @@ const userSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
   }
 );
 
-// Virtual populate for reminders
 userSchema.virtual('reminders', {
   ref: 'Reminder',
   localField: '_id',
   foreignField: 'userId'
 });
 
-// Index for faster email lookups
 userSchema.index({ email: 1 });
 
 const User = mongoose.model('User', userSchema);

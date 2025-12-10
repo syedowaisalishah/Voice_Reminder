@@ -35,14 +35,11 @@ const callLogSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: false // Using receivedAt instead
+    timestamps: false
   }
 );
 
-// Compound index for idempotency checks (prevent duplicate webhooks)
 callLogSchema.index({ externalCallId: 1, provider: 1 }, { unique: true });
-
-// Index for querying logs by reminder
 callLogSchema.index({ reminderId: 1 });
 
 const CallLog = mongoose.model('CallLog', callLogSchema);

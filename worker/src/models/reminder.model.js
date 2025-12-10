@@ -39,27 +39,23 @@ const reminderSchema = new mongoose.Schema(
     twilioCallSid: {
       type: String,
       default: null,
-      sparse: true // Only index non-null values
+      sparse: true
     }
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
   }
 );
 
-// Virtual populate for call logs
 reminderSchema.virtual('callLogs', {
   ref: 'CallLog',
   localField: '_id',
   foreignField: 'reminderId'
 });
 
-// Compound index for worker queries (find due reminders with status 'scheduled')
 reminderSchema.index({ status: 1, scheduledAt: 1 });
-
-// Index for Twilio callback lookups
 reminderSchema.index({ twilioCallSid: 1 });
 
 const Reminder = mongoose.model('Reminder', reminderSchema);
