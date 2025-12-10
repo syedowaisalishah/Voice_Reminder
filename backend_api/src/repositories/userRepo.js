@@ -1,15 +1,24 @@
 const User = require('../models/user.model');
 
+/**
+ * User Repository - Database access layer for User model
+ * Contains ONLY database operations, no business logic
+ */
+
 module.exports = {
-  createUser: async (email) => {
+  create: async (email) => {
     return await User.create({ email });
   },
 
-  getAllUsers: async () => {
+  findAll: async () => {
     return await User.find().sort({ createdAt: -1 });
   },
 
-  getUserById: async (id) => {
+  findById: async (id) => {
     return await User.findById(id);
+  },
+
+  findByEmail: async (email) => {
+    return await User.findOne({ email: email.toLowerCase() });
   }
 };

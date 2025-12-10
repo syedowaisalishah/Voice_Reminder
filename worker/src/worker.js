@@ -1,6 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const logger = require('../utils/logger');
+const logger = require('./utils/logger');
+
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/voice_reminder';
@@ -17,9 +18,10 @@ mongoose.connect(MONGODB_URI, {
 });
 
 // Import models - they need to be defined in worker or shared
-const Reminder = require('../models/reminder.model');
-const CallLog = require('../models/calllog.model');
-const twilioClient = require('../integrations/twilioClient');
+const Reminder = require('./models/reminder.model');
+const CallLog = require('./models/calllog.model');
+const twilioClient = require('./integrations/twilioClient');
+
 
 const POLL_SECONDS = parseInt(process.env.WORKER_POLL_INTERVAL_SECONDS || '60', 10);
 
