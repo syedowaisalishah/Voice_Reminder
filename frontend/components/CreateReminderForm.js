@@ -22,9 +22,17 @@ export default function CreateReminderForm({ onReminderCreated }) {
         try {
             const { getUsers } = await import('../lib/api');
             const response = await getUsers();
-            setUsers(response.data);
+            
+            // Backend returns: { success: true, data: [...], meta: {...} }
+            const apiResponse = response.data;
+            const usersArray = (apiResponse && Array.isArray(apiResponse.data)) 
+                ? apiResponse.data 
+                : Array.isArray(apiResponse) ? apiResponse : [];
+            
+            setUsers(usersArray);
         } catch (err) {
             console.error('Failed to fetch users:', err);
+            setUsers([]);
             setError('Failed to load users. Please refresh the page.');
         } finally {
             setLoadingUsers(false);
@@ -102,8 +110,11 @@ export default function CreateReminderForm({ onReminderCreated }) {
                 message: formData.message,
                 scheduledAt: new Date(formData.scheduledAt).toISOString(),
             });
+            
+            // Backend returns: { success: true, data: {...} }
+            const reminderData = response.data?.data || response.data;
 
-            setSuccess(`Reminder created successfully! ID: ${response.data.id}`);
+            setSuccess(`Reminder created successfully! ID: ${reminderData.id}`);
             setFormData({
                 userId: formData.userId, // Keep user selected
                 phoneNumber: '',
@@ -113,7 +124,7 @@ export default function CreateReminderForm({ onReminderCreated }) {
 
             // Notify parent component
             if (onReminderCreated) {
-                onReminderCreated(response.data);
+                onReminderCreated(reminderData);
             }
         } catch (err) {
             if (err.response) {

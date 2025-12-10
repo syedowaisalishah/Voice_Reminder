@@ -1,6 +1,7 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const logger = require('./utils/logger');
 const connectDB = require('./config/db');
 
@@ -13,6 +14,12 @@ const app = express();
 // Initialize MongoDB connection
 connectDB();
 
+// CORS middleware - allow frontend to access API
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
 app.use(bodyParser.json());
 
 // simple request logging
@@ -21,8 +28,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/users', usersRouter);
-app.use('/reminders', remindersRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/reminders', remindersRouter);
 app.use('/webhooks', webhooksRouter);
 
 // health

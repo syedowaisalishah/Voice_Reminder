@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // Get API base URL from environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
+// Backend API runs on port 4000 by default
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -9,6 +10,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Users API

@@ -33,12 +33,15 @@ export default function CreateUserForm({ onUserCreated }) {
             const { createUser } = await import('../lib/api');
             const response = await createUser(email);
 
-            setSuccess(`User created successfully! ID: ${response.data.id}`);
+            // Backend returns: { success: true, data: {...} }
+            const userData = response.data?.data || response.data;
+
+            setSuccess(`User created successfully! ID: ${userData.id}`);
             setEmail('');
 
             // Notify parent component
             if (onUserCreated) {
-                onUserCreated(response.data);
+                onUserCreated(userData);
             }
         } catch (err) {
             if (err.response) {

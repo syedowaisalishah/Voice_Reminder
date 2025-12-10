@@ -18,9 +18,30 @@ export default function UsersPage() {
         try {
             const { getUsers } = await import('../lib/api');
             const response = await getUsers();
-            setUsers(response.data);
+            
+            // Backend returns: { success: true, data: [...], meta: {...} }
+            // Axios wraps it in response.data, so we need response.data.data
+            const apiResponse = response.data;
+            
+            // Extract the actual users array from the API response
+            let usersArray = [];
+            if (apiResponse && Array.isArray(apiResponse.data)) {
+                // Standard format: { success: true, data: [...] }
+                usersArray = apiResponse.data;
+            } else if (Array.isArray(apiResponse)) {
+                // Direct array response
+                usersArray = apiResponse;
+            } else if (apiResponse && Array.isArray(apiResponse.users)) {
+                // Alternative format: { users: [...] }
+                usersArray = apiResponse.users;
+            } else {
+                console.warn('Unexpected response format:', apiResponse);
+            }
+            
+            setUsers(usersArray);
         } catch (err) {
             console.error('Failed to fetch users:', err);
+            setUsers([]); // Reset to empty array on error
             if (err.request) {
                 setError('Cannot connect to backend. Please ensure the backend API is running.');
             } else {

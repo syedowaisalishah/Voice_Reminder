@@ -14,13 +14,20 @@ module.exports = {
     try {
       const { email } = req.body;
       const user = await userService.createUser(email);
-      return res.status(201).json(user);
+      
+      return res.status(201).json({
+        success: true,
+        data: user
+      });
     } catch (err) {
       logger.error({ err }, 'createUser error');
       
       // Map service errors to HTTP responses
       if (err.statusCode) {
-        return res.status(err.statusCode).json({ error: err.message });
+        return res.status(err.statusCode).json({ 
+          success: false,
+          error: err.message 
+        });
       }
       
       next(err);
@@ -33,7 +40,14 @@ module.exports = {
   async listUsers(req, res, next) {
     try {
       const users = await userService.getAllUsers();
-      res.json(users);
+      
+      return res.json({
+        success: true,
+        data: users,
+        meta: {
+          count: users.length
+        }
+      });
     } catch (err) {
       logger.error({ err }, 'listUsers error');
       next(err);

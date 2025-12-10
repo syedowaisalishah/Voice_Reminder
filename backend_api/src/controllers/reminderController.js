@@ -12,22 +12,35 @@ module.exports = {
    */
   async createReminder(req, res, next) {
     try {
-      const { user_id, phone_number, message, scheduled_at } = req.body;
+      // Support both camelCase (from frontend) and snake_case (REST convention)
+      const { 
+        user_id, userId,
+        phone_number, phoneNumber,
+        message, 
+        scheduled_at, scheduledAt 
+      } = req.body;
       
       const reminder = await reminderService.createReminder({
-        user_id,
-        phone_number,
+        user_id: user_id || userId,
+        phone_number: phone_number || phoneNumber,
         message,
-        scheduled_at
+        scheduled_at: scheduled_at || scheduledAt
       });
       
-      return res.status(201).json(reminder);
+      // Return formatted response
+      return res.status(201).json({
+        success: true,
+        data: reminder
+      });
     } catch (err) {
       logger.error({ err }, 'createReminder error');
       
       // Map service errors to HTTP responses
       if (err.statusCode) {
-        return res.status(err.statusCode).json({ error: err.message });
+        return res.status(err.statusCode).json({ 
+          success: false,
+          error: err.message 
+        });
       }
       
       next(err);
@@ -41,12 +54,19 @@ module.exports = {
     try {
       const { id } = req.params;
       const reminder = await reminderService.getReminderById(id);
-      res.json(reminder);
+      
+      return res.json({
+        success: true,
+        data: reminder
+      });
     } catch (err) {
       logger.error({ err }, 'getReminder error');
       
       if (err.statusCode) {
-        return res.status(err.statusCode).json({ error: err.message });
+        return res.status(err.statusCode).json({ 
+          success: false,
+          error: err.message 
+        });
       }
       
       next(err);
@@ -67,12 +87,23 @@ module.exports = {
         pageSize
       });
       
-      res.json(reminders);
+      return res.json({
+        success: true,
+        data: reminders,
+        meta: {
+          userId,
+          status: status || 'all',
+          count: reminders.length
+        }
+      });
     } catch (err) {
       logger.error({ err }, 'listByUser error');
       
       if (err.statusCode) {
-        return res.status(err.statusCode).json({ error: err.message });
+        return res.status(err.statusCode).json({ 
+          success: false,
+          error: err.message 
+        });
       }
       
       next(err);

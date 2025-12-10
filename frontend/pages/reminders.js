@@ -39,9 +39,17 @@ export default function RemindersPage() {
     try {
       const { getUsers } = await import('../lib/api');
       const response = await getUsers();
-      setUsers(response.data);
+      
+      // Backend returns: { success: true, data: [...], meta: {...} }
+      const apiResponse = response.data;
+      const usersArray = (apiResponse && Array.isArray(apiResponse.data)) 
+        ? apiResponse.data 
+        : Array.isArray(apiResponse) ? apiResponse : [];
+      
+      setUsers(usersArray);
     } catch (err) {
       console.error('Failed to fetch users:', err);
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
@@ -58,9 +66,17 @@ export default function RemindersPage() {
     try {
       const { getUserReminders } = await import('../lib/api');
       const response = await getUserReminders(userId);
-      setReminders(response.data);
+      
+      // Backend returns: { success: true, data: [...], meta: {...} }
+      const apiResponse = response.data;
+      const remindersArray = (apiResponse && Array.isArray(apiResponse.data)) 
+        ? apiResponse.data 
+        : Array.isArray(apiResponse) ? apiResponse : [];
+      
+      setReminders(remindersArray);
     } catch (err) {
       console.error('Failed to fetch reminders:', err);
+      setReminders([]);
       if (err.request) {
         setError('Cannot connect to backend. Please ensure the backend API is running.');
       } else {

@@ -23,7 +23,10 @@ export default function ReminderDetailPage() {
         try {
             const { getReminder } = await import('../../lib/api');
             const response = await getReminder(reminderId);
-            setReminder(response.data);
+            
+            // Backend returns: { success: true, data: {...} }
+            const reminderData = response.data?.data || response.data;
+            setReminder(reminderData);
         } catch (err) {
             console.error('Failed to fetch reminder:', err);
             if (err.response && err.response.status === 404) {
