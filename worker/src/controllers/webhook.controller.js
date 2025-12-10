@@ -2,55 +2,47 @@ const reminderService = require('../services/reminder.service');
 const logger = require('../utils/logger');
 
 /**
- * Handle incoming webhook callback from Voice Provider
+ * Handle incoming Twilio webhook callback
  * POST /webhooks/call-status
  */
 async function handleCallStatus(req, res) {
-    logger.info({ body: req.body }, 'Received webhook callback');
+    logger.info({ body: req.body }, 'Received Twilio webhook callback');
 
     try {
-        const { call_id, status, metadata, transcript } = req.body;
+        // Twilio sends different parameters than generic voice provider
+        // Extract Twilio-specific fields
+        const callSid = req.body.CallSid;
+        const callStatus = req.body.CallStatus;
+        const reminderId = req.body.reminderId; // Optional - if we pass it in statusCallback URL
 
         // Validate required fields
-        if (!call_id) {
-            logger.warn({ body: req.body }, 'Missing call_id in webhook payload');
-            return res.status(400).json({ error: 'Missing call_id' });
+        if (!callSid) {
+            logger.warn({ body: req.body }, 'Missing CallSid in webhook payload');
+            return res.status(400).json({ error: 'Missing CallSid' });
         }
 
-        if (!status) {
-            logger.warn({ body: req.body }, 'Missing status in webhook payload');
-            return res.status(400).json({ error: 'Missing status' });
+        if (!callStatus) {
+            logger.warn({ body: req.body }, 'Missing CallStatus in webhook payload');
+            return res.status(400).json({ error: 'Missing CallStatus' });
         }
-
-        if (!metadata || !metadata.reminder_id) {
-            logger.warn({ body: req.body }, 'Missing metadata.reminder_id in webhook payload');
-            return res.status(400).json({ error: 'Missing metadata.reminder_id' });
-        }
-
-        const reminderId = metadata.reminder_id;
 
         // Process the webhook (idempotent)
         const result = await reminderService.processCallWebhook({
-            reminderId,
-            externalCallId: call_id,
-            status,
-            transcript: transcript || null
+            callSid,
+            status: callStatus,
+            reminderId
         });
 
-        logger.info({ reminderId, status, result }, 'Webhook processed successfully');
+        logger.info({ callSid, callStatus, result }, 'Twilio webhook processed successfully');
 
-        return res.status(200).json({
-            success: true,
-            message: result.message
-        });
+        // Twilio expects 200 OK response
+        return res.status(200).send('OK');
 
     } catch (error) {
         logger.error({ error: error.message, stack: error.stack }, 'Webhook processing failed');
 
-        return res.status(500).json({
-            error: 'Internal server error',
-            message: error.message
-        });
+        // Still return 200 to Twilio to prevent retries for unrecoverable errors
+        return res.status(200).send('Error logged');
     }
 }
 

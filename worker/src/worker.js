@@ -1,25 +1,13 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
+const connectDB = require('./config/db');
 const reminderRepository = require('./repositories/reminder.repository');
 const callLogRepository = require('./repositories/calllog.repository');
-const voiceProviderClient = require('./integrations/voice-provider.client');
+const twilioClient = require('./integrations/twilioClient');
 const logger = require('./utils/logger');
 
-// MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/voice_reminder';
-
-mongoose.connect(MONGODB_URI, {
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-}).then(() => {
-  logger.info('Worker: MongoDB Connected');
-}).catch((err) => {
-  logger.error({ err }, 'Worker: MongoDB connection failed');
-  process.exit(1);
-});
-
 const POLL_SECONDS = parseInt(process.env.WORKER_POLL_INTERVAL_SECONDS || '60', 10);
+const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER;
+const WEBHOOK_BASE_URL = process.env.WEBHOOK_BASE_URL || 'http://localhost:4000';
 
 /**
  * Process due reminders - main worker function
@@ -36,44 +24,53 @@ async function processDueReminders() {
     // Process each reminder
     for (const reminder of dueReminders) {
       try {
-        // Call Voice Provider API
-        const call = await voiceProviderClient.createCall({
-          phoneNumber: reminder.phoneNumber,
+        // Validate Twilio configuration
+        if (!TWILIO_FROM_NUMBER) {
+          logger.error('TWILIO_FROM_NUMBER not configured');
+          continue;
+        }
+
+        // Create Twilio call
+        const statusCallback = `${WEBHOOK_BASE_URL}/webhooks/call-status`;
+        
+        const call = await twilioClient.createCall({
+          to: reminder.phoneNumber,
+          from: TWILIO_FROM_NUMBER,
           message: reminder.message,
-          reminderId: reminder.id
+          statusCallback
         });
 
         // Update reminder status to 'processing'
         await reminderRepository.updateReminderStatus(
-          reminder.id,
+          reminder._id.toString(),
           'processing',
-          call.callId
+          call.sid
         );
 
         // Create call log entry
         await callLogRepository.createCallLog({
-          reminderId: reminder.id,
-          externalCallId: call.callId,
-          status: 'created',
-          provider: 'voice-provider'
+          reminderId: reminder._id.toString(),
+          externalCallId: call.sid,
+          status: 'initiated',
+          provider: 'twilio'
         });
 
         logger.info({
-          reminderId: reminder.id,
-          callId: call.callId,
+          reminderId: reminder._id.toString(),
+          callSid: call.sid,
           phoneNumber: reminder.phoneNumber
-        }, 'Call triggered successfully');
+        }, 'Twilio call triggered successfully');
 
       } catch (error) {
         logger.error({
           error: error.message,
-          reminderId: reminder.id,
+          reminderId: reminder._id.toString(),
           stack: error.stack
         }, 'Failed to trigger call - marking reminder as failed');
 
         // Mark reminder as failed
         await reminderRepository.updateReminderStatus(
-          reminder.id,
+          reminder._id.toString(),
           'failed'
         );
       }
@@ -93,6 +90,9 @@ async function processDueReminders() {
 (async function run() {
   logger.info('Voice Reminder Worker starting...');
   logger.info({ pollIntervalSeconds: POLL_SECONDS }, 'Worker configuration');
+
+  // Connect to MongoDB first
+  await connectDB();
 
   // Run immediately on startup
   await processDueReminders();

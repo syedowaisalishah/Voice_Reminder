@@ -1,46 +1,75 @@
-const prisma = require('../config/db');
+const Reminder = require('../models/reminder.model');
+const logger = require('../utils/logger');
 
 /**
  * Get due reminders that need to be processed
  */
 async function getDueReminders(limit = 50) {
-  return await prisma.reminder.findMany({
-    where: {
-      scheduledAt: { lte: new Date() },
+  try {
+    return await Reminder.find({
+      scheduledAt: { $lte: new Date() },
       status: 'scheduled'
-    },
-    take: limit,
-    orderBy: {
-      scheduledAt: 'asc'
-    }
-  });
+    })
+      .limit(limit)
+      .sort({ scheduledAt: 1 });
+  } catch (error) {
+    logger.error({ error: error.message }, 'Error fetching due reminders');
+    throw error;
+  }
 }
 
 /**
  * Update reminder status
  */
-async function updateReminderStatus(id, status, externalCallId = null) {
-  return await prisma.reminder.update({
-    where: { id },
-    data: { 
+async function updateReminderStatus(id, status, twilioCallSid = null) {
+  try {
+    const updateData = {
       status,
-      ...(externalCallId && { externalCallId }),
       updatedAt: new Date()
+    };
+
+    if (twilioCallSid) {
+      updateData.twilioCallSid = twilioCallSid;
     }
-  });
+
+    return await Reminder.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
+  } catch (error) {
+    logger.error({ error: error.message, reminderId: id }, 'Error updating reminder status');
+    throw error;
+  }
 }
 
 /**
  * Find reminder by ID
  */
 async function findReminderById(id) {
-  return await prisma.reminder.findUnique({
-    where: { id }
-  });
+  try {
+    return await Reminder.findById(id).populate('callLogs');
+  } catch (error) {
+    logger.error({ error: error.message, reminderId: id }, 'Error finding reminder');
+    throw error;
+  }
+}
+
+/**
+ * Find reminder by Twilio Call SID
+ */
+async function findReminderByCallSid(twilioCallSid) {
+  try {
+    return await Reminder.findOne({ twilioCallSid });
+  } catch (error) {
+    logger.error({ error: error.message, twilioCallSid }, 'Error finding reminder by call SID');
+    throw error;
+  }
 }
 
 module.exports = {
   getDueReminders,
   updateReminderStatus,
-  findReminderById
+  findReminderById,
+  findReminderByCallSid
 };
