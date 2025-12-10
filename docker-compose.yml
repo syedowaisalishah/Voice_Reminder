@@ -1,0 +1,75 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: voice_reminder
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    ports:
+      - "4000:4000"
+    restart: on-failure
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - api
+    restart: on-failure
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  pgdata:
+# version: '3.9'
+
+# services:
+#   db:
+#     image: postgres:15
+#     container_name: reminder-db
+#     restart: always
+#     environment:
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: postgres
+#       POSTGRES_DB: reminderdb
+#     ports:
+#       - "5433:5432"
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+
+#   backend:
+#     build: ./backend-api
+#     container_name: reminder-backend
+#     restart: always
+#     depends_on:
+#       - db
+#     environment:
+#       DATABASE_URL: postgres://postgres:postgres@db:5432/reminderdb
+#       PORT: 3000
+#     ports:
+#       - "3000:3000"
+
+# volumes:
+#   postgres_data:
