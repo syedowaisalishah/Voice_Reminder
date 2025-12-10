@@ -1,2 +1,39 @@
-.env
+# Dependencies
 node_modules/
+*/node_modules/
+**/node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+node_modules/
+frontend/.next/
+.env.*.local
+*.env
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Testing
+coverage/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Misc
+*.bak
+*.tmp
+
