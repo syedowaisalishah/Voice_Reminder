@@ -6,10 +6,10 @@ module.exports = {
   },
 
   getAllUsers: async () => {
-    return await User.findAll();
+    return await User.find().sort({ createdAt: -1 });
   },
 
   getUserById: async (id) => {
-    return await User.findByPk(id);
+    return await User.findById(id);
   }
 };

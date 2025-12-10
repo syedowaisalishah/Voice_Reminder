@@ -6,6 +6,6 @@ module.exports = {
   },
 
   getLogsByReminderId: async (reminder_id) => {
-    return await CallLog.findAll({ where: { reminder_id } });
+    return await CallLog.find({ reminderId: reminder_id }).sort({ receivedAt: -1 });
   }
 };

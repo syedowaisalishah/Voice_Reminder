@@ -2,12 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const logger = require('./utils/logger');
+const connectDB = require('./config/db');
 
 const usersRouter = require('./routes/users');
 const remindersRouter = require('./routes/reminders');
 const webhooksRouter = require('./routes/webhooks');
 
 const app = express();
+
+// Initialize MongoDB connection
+connectDB();
+
 app.use(bodyParser.json());
 
 // simple request logging

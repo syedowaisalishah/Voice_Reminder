@@ -1,19 +1,25 @@
 const twilio = require('twilio');
+const logger = require('../utils/logger');
 
-const client = twilio(
-  process.env.TWILIO_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+const accountSid = process.env.TWILIO_ACCOUNT_SID || process.env.TWILIO_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = twilio(accountSid, authToken);
 
-module.exports = {
-  initiateCall: async (to, message, reminder_id) => {
-    return await client.calls.create({
-      to,
-      from: process.env.TWILIO_PHONE,
-      url: `${process.env.BACKEND_URL}/twilio/voice?message=${encodeURIComponent(message)}`,
-      statusCallback: `${process.env.BACKEND_URL}/webhooks/twilio-status`,
-      statusCallbackEvent: ['completed', 'failed'],
-      statusCallbackMethod: 'POST'
-    });
-  }
-};
+/**
+ * Create an outbound call via Twilio REST API.
+ */
+async function createCall({ to, from, message, statusCallback }) {
+  const twiml = `<Response><Say voice="alice">${message}</Say></Response>`;
+  const call = await client.calls.create({
+    twiml,
+    to,
+    from,
+    statusCallback,
+    statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+    statusCallbackMethod: 'POST'
+  });
+  logger.info({ callSid: call.sid }, 'twilio call created');
+  return call;
+}
+
+module.exports = { createCall };

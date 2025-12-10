@@ -1,28 +1,30 @@
 version: '3.8'
 services:
-  postgres:
-    image: postgres:15
+  mongodb:
+    image: mongo:7
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: voice_reminder
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: voice_reminder
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mongodata:/data/db
     ports:
-      - "5432:5432"
+      - "27017:27017"
 
   api:
     build:
-      context: ./backend-api
+      context: ./backend_api
       dockerfile: Dockerfile
     env_file:
       - .env
     depends_on:
-      - postgres
+      - mongodb
     ports:
       - "4000:4000"
     restart: on-failure
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/voice_reminder?authSource=admin
 
   worker:
     build:
@@ -31,9 +33,11 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
+      - mongodb
       - api
     restart: on-failure
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/voice_reminder?authSource=admin
 
   adminer:
     image: adminer
@@ -42,7 +46,7 @@ services:
       - 8080:8080
 
 volumes:
-  pgdata:
+  mongodata:
 # version: '3.9'
 
 # services:

@@ -1,8 +1,25 @@
 require('dotenv').config();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-const twilioClient = require('../integrations/twilio.client');
+const mongoose = require('mongoose');
 const logger = require('../utils/logger');
+
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/voice_reminder';
+
+mongoose.connect(MONGODB_URI, {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+}).then(() => {
+  logger.info('Worker: MongoDB Connected');
+}).catch((err) => {
+  logger.error({ err }, 'Worker: MongoDB connection failed');
+  process.exit(1);
+});
+
+// Import models - they need to be defined in worker or shared
+const Reminder = require('../models/reminder.model');
+const CallLog = require('../models/calllog.model');
+const twilioClient = require('../integrations/twilioClient');
 
 const POLL_SECONDS = parseInt(process.env.WORKER_POLL_INTERVAL_SECONDS || '60', 10);
 
@@ -12,13 +29,10 @@ async function processDueReminders() {
   try {
     const now = new Date();
 
-    const dueReminders = await prisma.reminder.findMany({
-      where: {
-        scheduledAt: { lte: now },
-        status: 'scheduled'
-      },
-      take: 50
-    });
+    const dueReminders = await Reminder.find({
+      scheduledAt: { $lte: now },
+      status: 'scheduled'
+    }).limit(50);
 
     logger.info({ count: dueReminders.length }, "Found due reminders");
 
@@ -32,38 +46,32 @@ async function processDueReminders() {
         });
 
         // Update reminder
-        await prisma.reminder.update({
-          where: { id: reminder.id },
-          data: {
-            twilioCallSid: call.sid,
-            status: "processing"
-          }
+        await Reminder.findByIdAndUpdate(reminder._id, {
+          twilioCallSid: call.sid,
+          status: "processing"
         });
 
         // Insert call log
-        await prisma.callLog.create({
-          data: {
-            reminderId: reminder.id,
-            externalCallId: call.sid,
-            provider: "twilio",
-            status: "created"
-          }
+        await CallLog.create({
+          reminderId: reminder._id,
+          externalCallId: call.sid,
+          provider: "twilio",
+          status: "created"
         });
 
         logger.info({
-          reminderId: reminder.id,
+          reminderId: reminder._id,
           callSid: call.sid
         }, "Triggered Twilio call");
 
       } catch (error) {
         logger.error({
           error,
-          reminderId: reminder.id
+          reminderId: reminder._id
         }, "Error triggering Twilio call — marking as failed");
 
-        await prisma.reminder.update({
-          where: { id: reminder.id },
-          data: { status: "failed" }
+        await Reminder.findByIdAndUpdate(reminder._id, {
+          status: "failed"
         });
       }
     }

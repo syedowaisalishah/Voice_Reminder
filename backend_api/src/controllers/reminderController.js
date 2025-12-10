@@ -1,5 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const Reminder = require('../models/reminder.model');
+const User = require('../models/user.model');
 const logger = require('../utils/logger');
 const { isValidPhoneNumber, parseFutureDate } = require('../utils/validators');
 
@@ -15,19 +15,17 @@ module.exports = {
       if (!scheduledDate) return res.status(400).json({ error: 'scheduled_at must be a future ISO datetime' });
 
       // verify user exists
-      const user = await prisma.user.findUnique({ where: { id: user_id }});
+      const user = await User.findById(user_id);
       if (!user) return res.status(400).json({ error: 'user not found' });
 
-      const reminder = await prisma.reminder.create({
-        data: {
-          userId: user_id,
-          phoneNumber: phone_number,
-          message,
-          scheduledAt: scheduledDate,
-          status: 'scheduled'
-        }
+      const reminder = await Reminder.create({
+        userId: user_id,
+        phoneNumber: phone_number,
+        message,
+        scheduledAt: scheduledDate,
+        status: 'scheduled'
       });
-      logger.info({ reminderId: reminder.id }, 'reminder created');
+      logger.info({ reminderId: reminder._id }, 'reminder created');
       return res.status(201).json(reminder);
     } catch (err) {
       logger.error({ err }, 'createReminder error');
@@ -38,10 +36,7 @@ module.exports = {
   async getReminder(req, res, next) {
     try {
       const { id } = req.params;
-      const reminder = await prisma.reminder.findUnique({
-        where: { id },
-        include: { callLogs: { orderBy: { receivedAt: 'desc' } } }
-      });
+      const reminder = await Reminder.findById(id).populate('callLogs');
       if (!reminder) return res.status(404).json({ error: 'not found' });
       res.json(reminder);
     } catch (err) {
@@ -56,12 +51,10 @@ module.exports = {
       const { status, page = 1, pageSize = 25 } = req.query;
       const where = { userId };
       if (status) where.status = status;
-      const reminders = await prisma.reminder.findMany({
-        where,
-        orderBy: { scheduledAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: parseInt(pageSize, 10),
-      });
+      const reminders = await Reminder.find(where)
+        .sort({ scheduledAt: -1 })
+        .skip((page - 1) * pageSize)
+        .limit(parseInt(pageSize, 10));
       res.json(reminders);
     } catch (err) {
       logger.error({ err }, 'listByUser error');
