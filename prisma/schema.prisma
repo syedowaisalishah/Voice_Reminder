@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  reminders Reminder[]
+}
+
+model Reminder {
+  id              String     @id @default(uuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumber     String
+  message         String
+  scheduledAt     DateTime
+  status          String     @default("scheduled") // scheduled | processing | called | failed
+  twilioCallSid   String?    @db.VarChar(255)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  callLogs        CallLog[]
+}
+
+model CallLog {
+  id              String   @id @default(uuid())
+  reminderId      String
+  reminder        Reminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+  externalCallId  String
+  provider        String
+  status          String
+  transcript      String?
+  receivedAt      DateTime @default(now())
+  @@index([reminderId])
+  @@index([externalCallId])
+}

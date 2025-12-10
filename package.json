@@ -1,0 +1,25 @@
+{
+  "name": "voice-reminder-api",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon src/server.js",
+    "start": "node src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.0.0",
+    "axios": "^1.4.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "pino": "^8.12.0",
+    "twilio": "^4.0.0",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "prisma": "^5.0.0"
+  }
+}
