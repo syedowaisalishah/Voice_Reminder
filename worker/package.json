@@ -3,12 +3,20 @@
   "version": "1.0.0",
   "main": "src/worker.js",
   "scripts": {
-    "start": "node src/worker.js"
+    "start": "node src/worker.js",
+    "webhook": "node src/webhook-server.js",
+    "dev": "node -r dotenv/config src/worker.js & node -r dotenv/config src/webhook-server.js"
   },
   "dependencies": {
+    "@prisma/client": "^5.0.0",
+    "axios": "^1.6.0",
     "dotenv": "^16.0.3",
+    "express": "^4.18.2",
     "mongoose": "^8.0.0",
-    "twilio": "^4.0.0",
-    "pino": "^8.12.0"
+    "pino": "^8.12.0",
+    "twilio": "^4.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.0.0"
   }
 }

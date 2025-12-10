@@ -1,7 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const reminderRepository = require('./repositories/reminder.repository');
+const callLogRepository = require('./repositories/calllog.repository');
+const voiceProviderClient = require('./integrations/voice-provider.client');
 const logger = require('./utils/logger');
-
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/voice_reminder';
@@ -17,74 +19,97 @@ mongoose.connect(MONGODB_URI, {
   process.exit(1);
 });
 
-// Import models - they need to be defined in worker or shared
-const Reminder = require('./models/reminder.model');
-const CallLog = require('./models/calllog.model');
-const twilioClient = require('./integrations/twilioClient');
-
-
 const POLL_SECONDS = parseInt(process.env.WORKER_POLL_INTERVAL_SECONDS || '60', 10);
 
+/**
+ * Process due reminders - main worker function
+ */
 async function processDueReminders() {
   logger.info('Worker tick: checking due reminders');
 
   try {
-    const now = new Date();
+    // Get due reminders from repository
+    const dueReminders = await reminderRepository.getDueReminders(50);
+    
+    logger.info({ count: dueReminders.length }, 'Found due reminders');
 
-    const dueReminders = await Reminder.find({
-      scheduledAt: { $lte: now },
-      status: 'scheduled'
-    }).limit(50);
-
-    logger.info({ count: dueReminders.length }, "Found due reminders");
-
+    // Process each reminder
     for (const reminder of dueReminders) {
       try {
-        const call = await twilioClient.createCall({
-          to: reminder.phoneNumber,
-          from: process.env.TWILIO_FROM_NUMBER,
+        // Call Voice Provider API
+        const call = await voiceProviderClient.createCall({
+          phoneNumber: reminder.phoneNumber,
           message: reminder.message,
-          statusCallback: `${process.env.PUBLIC_BASE_URL}/webhooks/twilio`
+          reminderId: reminder.id
         });
 
-        // Update reminder
-        await Reminder.findByIdAndUpdate(reminder._id, {
-          twilioCallSid: call.sid,
-          status: "processing"
-        });
+        // Update reminder status to 'processing'
+        await reminderRepository.updateReminderStatus(
+          reminder.id,
+          'processing',
+          call.callId
+        );
 
-        // Insert call log
-        await CallLog.create({
-          reminderId: reminder._id,
-          externalCallId: call.sid,
-          provider: "twilio",
-          status: "created"
+        // Create call log entry
+        await callLogRepository.createCallLog({
+          reminderId: reminder.id,
+          externalCallId: call.callId,
+          status: 'created',
+          provider: 'voice-provider'
         });
 
         logger.info({
-          reminderId: reminder._id,
-          callSid: call.sid
-        }, "Triggered Twilio call");
+          reminderId: reminder.id,
+          callId: call.callId,
+          phoneNumber: reminder.phoneNumber
+        }, 'Call triggered successfully');
 
       } catch (error) {
         logger.error({
-          error,
-          reminderId: reminder._id
-        }, "Error triggering Twilio call — marking as failed");
+          error: error.message,
+          reminderId: reminder.id,
+          stack: error.stack
+        }, 'Failed to trigger call - marking reminder as failed');
 
-        await Reminder.findByIdAndUpdate(reminder._id, {
-          status: "failed"
-        });
+        // Mark reminder as failed
+        await reminderRepository.updateReminderStatus(
+          reminder.id,
+          'failed'
+        );
       }
     }
 
   } catch (error) {
-    logger.error({ error }, "Worker tick failed");
+    logger.error({ 
+      error: error.message,
+      stack: error.stack 
+    }, 'Worker tick failed');
   }
 }
 
+/**
+ * Start the worker
+ */
 (async function run() {
-  logger.info("Worker started");
-  await processDueReminders(); // run immediately
+  logger.info('Voice Reminder Worker starting...');
+  logger.info({ pollIntervalSeconds: POLL_SECONDS }, 'Worker configuration');
+
+  // Run immediately on startup
+  await processDueReminders();
+
+  // Then run on interval
   setInterval(processDueReminders, POLL_SECONDS * 1000);
+
+  logger.info('Worker is now running and polling for due reminders');
 })();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
