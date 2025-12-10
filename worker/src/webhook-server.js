@@ -4,9 +4,14 @@ const webhookController = require('./controllers/webhook.controller');
 const logger = require('./utils/logger');
 
 const app = express();
-const PORT = process.env.WEBHOOK_PORT || 4000;
+const connectDB = require('./config/db');
+const PORT = process.env.WEBHOOK_PORT || 4001;
+
+// Connect to Database
+connectDB();
 
 // Middleware
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Request logging middleware
@@ -28,6 +33,9 @@ app.get('/health', (req, res) => {
     });
 });
 
+app.get('/webhooks/call-status', (req, res) => {
+    res.send('Voice Reminder Webhook Endpoint (POST only)');
+});
 app.post('/webhooks/call-status', webhookController.handleCallStatus);
 
 // 404 handler

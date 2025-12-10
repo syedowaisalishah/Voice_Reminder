@@ -7,7 +7,7 @@ const logger = require('./utils/logger');
 
 const POLL_SECONDS = parseInt(process.env.WORKER_POLL_INTERVAL_SECONDS || '60', 10);
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER;
-const WEBHOOK_BASE_URL = process.env.WEBHOOK_BASE_URL || 'http://localhost:4000';
+const WEBHOOK_BASE_URL = process.env.WEBHOOK_BASE_URL || 'http://localhost:4001';
 
 /**
  * Process due reminders - main worker function
