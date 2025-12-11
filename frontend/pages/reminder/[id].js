@@ -44,7 +44,7 @@ export default function ReminderDetailPage() {
     const getStatusBadgeClass = (status) => {
         const statusClasses = {
             'scheduled': 'badge-scheduled',
-            'processing': 'badge-processing',
+            'initialized': 'badge-processing',
             'called': 'badge-called',
             'failed': 'badge-failed',
         };
@@ -233,8 +233,7 @@ export default function ReminderDetailPage() {
                             <h3 className="text-lg font-semibold text-blue-900 mb-2">Status Information</h3>
                             <div className="text-sm text-blue-800 space-y-1">
                                 <p><span className="font-semibold">Scheduled:</span> Reminder is waiting to be sent</p>
-                                <p><span className="font-semibold">Processing:</span> Call has been initiated, waiting for result</p>
-                                <p><span className="font-semibold">Called:</span> Call completed successfully</p>
+                                <p><span className="font-semibold">Initialized:</span> Call has been initiated, waiting for result</p>
                                 <p><span className="font-semibold">Failed:</span> Call failed or could not be completed</p>
                             </div>
                         </div>

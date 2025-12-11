@@ -20,7 +20,7 @@ export default function ReminderList({ reminders, loading }) {
   const getStatusBadgeClass = (status) => {
     const statusClasses = {
       'scheduled': 'badge-scheduled',
-      'processing': 'badge-processing',
+      'initialized': 'badge-processing',
       'called': 'badge-called',
       'failed': 'badge-failed',
     };
