@@ -951,14 +951,6 @@ This project is created as part of a technical assessment.
 
 ---
 
-## 📞 Support
-
-For any questions or issues:
-- Email: your-email@example.com
-- GitHub Issues: https://github.com/yourusername/Voice_Reminder/issues
-
----
-
 **Submission Date**: December 11, 2025  
 **Version**: 1.0.0  
 **Assignment**: Voice Reminder Service - Backend Development Take-Home
