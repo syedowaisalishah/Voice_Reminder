@@ -13,11 +13,9 @@ const app = express();
 // Initialize MongoDB connection
 connectDB();
 
-// CORS middleware - allow frontend to access API
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
-}));
+// Allow ALL origins
+app.use(cors());
+app.options('*', cors());
 
 app.use(bodyParser.json());
 
@@ -27,13 +25,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Routes
 app.use('/api/users', usersRouter);
 app.use('/api/reminders', remindersRouter);
 
-// health
+// Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
-// error handler
+// Error handler
 app.use((err, req, res, next) => {
   logger.error({ err }, 'unhandled error');
   res.status(500).json({ error: 'internal_server_error' });
