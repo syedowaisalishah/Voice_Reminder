@@ -11,7 +11,7 @@ module.exports = {
   },
 
   findById: async (id) => {
-    return await Reminder.findById(id).populate('callLogs');
+    return await Reminder.findById(id);
   },
 
   findByUserId: async (filter, options = {}) => {

@@ -49,12 +49,6 @@ const reminderSchema = new mongoose.Schema(
   }
 );
 
-// Virtual populate for call logs
-reminderSchema.virtual('callLogs', {
-  ref: 'CallLog',
-  localField: '_id',
-  foreignField: 'reminderId'
-});
 
 // Compound index for worker queries (find due reminders with status 'scheduled')
 reminderSchema.index({ status: 1, scheduledAt: 1 });
