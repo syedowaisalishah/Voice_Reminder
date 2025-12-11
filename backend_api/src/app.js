@@ -7,7 +7,6 @@ const connectDB = require('./config/db');
 
 const usersRouter = require('./routes/users');
 const remindersRouter = require('./routes/reminders');
-const webhooksRouter = require('./routes/webhooks');
 
 const app = express();
 
@@ -30,7 +29,6 @@ app.use((req, res, next) => {
 
 app.use('/api/users', usersRouter);
 app.use('/api/reminders', remindersRouter);
-app.use('/webhooks', webhooksRouter);
 
 // health
 app.get('/', (req, res) => res.json({ status: 'ok' }));

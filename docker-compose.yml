@@ -35,6 +35,8 @@ services:
     depends_on:
       - mongodb
       - api
+    ports:
+      - "4001:4001"
     restart: on-failure
     environment:
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/voice_reminder?authSource=admin
@@ -47,33 +49,33 @@ services:
 
 volumes:
   mongodata:
-# version: '3.9'
+    # version: '3.9'
 
-# services:
-#   db:
-#     image: postgres:15
-#     container_name: reminder-db
-#     restart: always
-#     environment:
-#       POSTGRES_USER: postgres
-#       POSTGRES_PASSWORD: postgres
-#       POSTGRES_DB: reminderdb
-#     ports:
-#       - "5433:5432"
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
+    # services:
+    #   db:
+    #     image: postgres:15
+    #     container_name: reminder-db
+    #     restart: always
+    #     environment:
+    #       POSTGRES_USER: postgres
+    #       POSTGRES_PASSWORD: postgres
+    #       POSTGRES_DB: reminderdb
+    #     ports:
+    #       - "5433:5432"
+    #     volumes:
+    #       - postgres_data:/var/lib/postgresql/data
 
-#   backend:
-#     build: ./backend-api
-#     container_name: reminder-backend
-#     restart: always
-#     depends_on:
-#       - db
-#     environment:
-#       DATABASE_URL: postgres://postgres:postgres@db:5432/reminderdb
-#       PORT: 3000
-#     ports:
-#       - "3000:3000"
+    #   backend:
+    #     build: ./backend-api
+    #     container_name: reminder-backend
+    #     restart: always
+    #     depends_on:
+    #       - db
+    #     environment:
+    #       DATABASE_URL: postgres://postgres:postgres@db:5432/reminderdb
+    #       PORT: 3000
+    #     ports:
+    #       - "3000:3000"
 
-# volumes:
-#   postgres_data:
+    # volumes:
+    #   postgres_data:
